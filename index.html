@@ -7,6 +7,7 @@ export default function CalculusMentor() {
   const [messages, setMessages] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [questionCount, setQuestionCount] = useState(0);
 
   // Textbook reference database
   const textbookTopics = {
@@ -26,7 +27,7 @@ export default function CalculusMentor() {
       chapter: 4,
       pages: '279-370',
       description: 'Applications of Differentiation',
-      keyTopics: ['maximum and minimum', 'mean value theorem', "l'Hospital's rule", 'curve sketching', 'optimization', 'Newton\'s method']
+      keyTopics: ['maximum and minimum', 'mean value theorem', "l'Hospital's rule", 'curve sketching', 'optimization', "Newton's method"]
     },
     integrals: {
       chapter: 5,
@@ -60,7 +61,7 @@ export default function CalculusMentor() {
       setNameSubmitted(true);
       setMessages([{
         type: 'mentor',
-        content: `Welcome, ${studentName}! I'm your Calculus Mentor, here to help you understand concepts from "Calculus: Early Transcendentals, 9th Edition" by Stewart, Clegg, and Watson. What calculus topic would you like help with today?`
+        content: `Welcome, ${studentName}! I'm Prof M, your Calculus Mentor. I'm here to help you understand concepts from "Calculus: Early Transcendentals" by Stewart, Clegg, and Watson. I can answer up to three questions in this session. What calculus topic would you like help with today?`
       }]);
     }
   };
@@ -182,11 +183,11 @@ These laws let us break complex limits into simpler pieces.`;
     else if (q.match(/fundamental theorem.*calculus|FTC/i)) {
       answer = `The Fundamental Theorem of Calculus connects differentiation and integration - two of calculus's main operations.
 
-**Part 1:** If f is continuous on [a,b], and g(x) = ∫[a to x] f(t)dt, then g'(x) = f(x)
+Part 1: If f is continuous on [a,b], and g(x) = ∫[a to x] f(t)dt, then g'(x) = f(x)
 
 This says: differentiation and integration are inverse processes.
 
-**Part 2:** If f is continuous on [a,b] and F is any antiderivative of f, then:
+Part 2: If f is continuous on [a,b] and F is any antiderivative of f, then:
 ∫[a to b] f(x)dx = F(b) - F(a)
 
 This gives us a practical way to evaluate definite integrals: find an antiderivative, then subtract its values at the endpoints.
@@ -200,14 +201,14 @@ Example: ∫[0 to 1] x²dx = [x³/3] from 0 to 1 = 1/3 - 0 = 1/3`;
 
 If u = g(x), then: ∫ f(g(x))·g'(x)dx = ∫ f(u)du
 
-**Steps:**
+Steps:
 1. Choose u = g(x)
 2. Calculate du = g'(x)dx
 3. Rewrite the integral in terms of u
 4. Integrate
 5. Substitute back to get answer in terms of x
 
-**Example:** ∫ 2x·cos(x²)dx
+Example: ∫ 2x·cos(x²)dx
 Let u = x², then du = 2x dx
 ∫ cos(u)du = sin(u) + C = sin(x²) + C
 
@@ -248,7 +249,7 @@ The textbook covers these main topics:
 • Chapter 6-7: Integration Applications and Techniques
 
 Let me know which area interests you!`;
-      reference = 'Textbook: "Calculus: Early Transcendentals, 9th Edition" by Stewart, Clegg, and Watson';
+      reference = 'Textbook: "Calculus: Early Transcendentals" by Stewart, Clegg, and Watson';
     }
 
     return { answer, reference };
@@ -257,6 +258,16 @@ Let me know which area interests you!`;
   const handleQuestionSubmit = (e) => {
     e.preventDefault();
     if (!currentQuestion.trim()) return;
+
+    // Check if session limit reached
+    if (questionCount >= 3) {
+      const limitMessage = {
+        type: 'mentor',
+        content: `I appreciate your enthusiasm for learning, ${studentName}! However, our session time is up for today. You've asked your three questions, and I hope they were helpful. Feel free to come back another day for more tutoring. Keep up the great work in your calculus studies!`
+      };
+      setMessages(prev => [...prev, limitMessage]);
+      return;
+    }
 
     // Add user's question
     const userMessage = {
@@ -272,15 +283,38 @@ Let me know which area interests you!`;
     setTimeout(() => {
       const { answer, reference } = generateAnswer(currentQuestion);
       
+      const newQuestionCount = questionCount + 1;
+      setQuestionCount(newQuestionCount);
+
       const mentorResponse = {
         type: 'mentor',
         content: answer,
         reference: reference
       };
 
-      setMessages(prev => [...prev, mentorResponse]);
+      const updatedMessages = [mentorResponse];
+
+      // Add session status after answer
+      if (newQuestionCount === 3) {
+        updatedMessages.push({
+          type: 'mentor',
+          content: `That was your third and final question for this session, ${studentName}. I hope I've been able to help you today! Feel free to start a new session anytime you need more help with calculus. Good luck with your studies!`
+        });
+      } else if (newQuestionCount === 2) {
+        updatedMessages.push({
+          type: 'mentor',
+          content: `You have one more question remaining in this session. Make it count!`
+        });
+      } else if (newQuestionCount === 1) {
+        updatedMessages.push({
+          type: 'mentor',
+          content: `Great question! You have two more questions in this session.`
+        });
+      }
+
+      setMessages(prev => [...prev, ...updatedMessages]);
       setIsLoading(false);
-    }, 500);
+    }, 800);
   };
 
   // Name input screen
@@ -292,7 +326,7 @@ Let me know which area interests you!`;
             <div className="bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
               <BookOpen className="text-indigo-600" size={32} />
             </div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Calculus Mentor</h1>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">Prof M's Calculus Tutorial</h1>
             <p className="text-gray-600">Your personal guide to first-year calculus</p>
           </div>
           
@@ -324,8 +358,9 @@ Let me know which area interests you!`;
           
           <div className="mt-6 text-xs text-gray-500 text-center">
             <p>Reference Textbook:</p>
-            <p className="font-medium">Calculus: Early Transcendentals, 9th Edition</p>
-            <p>Stewart, Clegg, Watson</p>
+            <p className="font-medium">Calculus: Early Transcendentals</p>
+            <p>Stewart, Clegg, Watson (9th Edition)</p>
+            <p className="mt-2 text-indigo-600 font-medium">3 questions per session</p>
           </div>
         </div>
       </div>
@@ -343,8 +378,8 @@ Let me know which area interests you!`;
               <BookOpen className="text-indigo-600" size={24} />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-800">Calculus Mentor</h1>
-              <p className="text-sm text-gray-600">Helping {studentName}</p>
+              <h1 className="text-xl font-bold text-gray-800">Prof M</h1>
+              <p className="text-sm text-gray-600">Helping {studentName} • Questions: {questionCount}/3</p>
             </div>
           </div>
           <button
@@ -352,6 +387,7 @@ Let me know which area interests you!`;
               setNameSubmitted(false);
               setMessages([]);
               setStudentName('');
+              setQuestionCount(0);
             }}
             className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
           >
@@ -407,7 +443,7 @@ Let me know which area interests you!`;
                     <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
                     <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                   </div>
-                  <span className="text-sm text-gray-600">Thinking...</span>
+                  <span className="text-sm text-gray-600">Prof M is thinking...</span>
                 </div>
               </div>
             </div>
@@ -424,12 +460,12 @@ Let me know which area interests you!`;
               value={currentQuestion}
               onChange={(e) => setCurrentQuestion(e.target.value)}
               className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition"
-              placeholder="Ask your calculus question..."
-              disabled={isLoading}
+              placeholder={questionCount >= 3 ? "Session complete - start a new session to continue" : "Ask your calculus question..."}
+              disabled={isLoading || questionCount >= 3}
             />
             <button
               type="submit"
-              disabled={!currentQuestion.trim() || isLoading}
+              disabled={!currentQuestion.trim() || isLoading || questionCount >= 3}
               className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               <Send size={20} />
@@ -437,7 +473,7 @@ Let me know which area interests you!`;
             </button>
           </form>
           <p className="text-xs text-gray-500 mt-2 text-center">
-            Try asking about: limits, derivatives, chain rule, integrals, optimization
+            Try asking about: limits, derivatives, chain rule, integrals, optimization, substitution
           </p>
         </div>
       </div>
