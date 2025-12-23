@@ -1,0 +1,446 @@
+import React, { useState } from 'react';
+import { Send, BookOpen, User, MessageCircle } from 'lucide-react';
+
+export default function CalculusMentor() {
+  const [studentName, setStudentName] = useState('');
+  const [nameSubmitted, setNameSubmitted] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [currentQuestion, setCurrentQuestion] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Textbook reference database
+  const textbookTopics = {
+    limits: {
+      chapter: 2,
+      pages: '77-172',
+      description: 'Limits and Derivatives',
+      keyTopics: ['tangent problems', 'velocity problems', 'limit laws', 'continuity', 'horizontal asymptotes']
+    },
+    derivatives: {
+      chapter: 3,
+      pages: '173-278',
+      description: 'Differentiation Rules',
+      keyTopics: ['power rule', 'product rule', 'quotient rule', 'chain rule', 'implicit differentiation', 'logarithmic functions']
+    },
+    applications_derivatives: {
+      chapter: 4,
+      pages: '279-370',
+      description: 'Applications of Differentiation',
+      keyTopics: ['maximum and minimum', 'mean value theorem', "l'Hospital's rule", 'curve sketching', 'optimization', 'Newton\'s method']
+    },
+    integrals: {
+      chapter: 5,
+      pages: '371-434',
+      description: 'Integrals',
+      keyTopics: ['area problems', 'definite integral', 'fundamental theorem', 'substitution rule']
+    },
+    applications_integration: {
+      chapter: 6,
+      pages: '435-484',
+      description: 'Applications of Integration',
+      keyTopics: ['areas between curves', 'volumes', 'work', 'average value']
+    },
+    techniques_integration: {
+      chapter: 7,
+      pages: '485-558',
+      description: 'Techniques of Integration',
+      keyTopics: ['integration by parts', 'trigonometric integrals', 'partial fractions', 'improper integrals']
+    },
+    functions: {
+      chapter: 1,
+      pages: '7-76',
+      description: 'Functions and Models',
+      keyTopics: ['function representations', 'mathematical models', 'exponential functions', 'logarithms']
+    }
+  };
+
+  const handleNameSubmit = (e) => {
+    e.preventDefault();
+    if (studentName.trim()) {
+      setNameSubmitted(true);
+      setMessages([{
+        type: 'mentor',
+        content: `Welcome, ${studentName}! I'm your Calculus Mentor, here to help you understand concepts from "Calculus: Early Transcendentals, 9th Edition" by Stewart, Clegg, and Watson. What calculus topic would you like help with today?`
+      }]);
+    }
+  };
+
+  const identifyTopic = (question) => {
+    const q = question.toLowerCase();
+    
+    if (q.match(/\b(limit|limits|approach|continuous|continuity)\b/)) {
+      return 'limits';
+    } else if (q.match(/\b(derivative|differentiat|tangent|rate of change|slope)\b/) && 
+               !q.match(/\b(application|optimization|maximum|minimum)\b/)) {
+      return 'derivatives';
+    } else if (q.match(/\b(optimization|maximum|minimum|critical point|curve sketch|mean value)\b/)) {
+      return 'applications_derivatives';
+    } else if (q.match(/\b(integral|integration|area|antiderivative)\b/) && 
+               !q.match(/\b(volume|work|application)\b/)) {
+      return 'integrals';
+    } else if (q.match(/\b(volume|work|area between|application.*integral)\b/)) {
+      return 'applications_integration';
+    } else if (q.match(/\b(integration by parts|partial fraction|trigonometric integral|improper)\b/)) {
+      return 'techniques_integration';
+    } else if (q.match(/\b(function|exponential|logarithm|model)\b/)) {
+      return 'functions';
+    }
+    
+    return null;
+  };
+
+  const generateAnswer = (question) => {
+    const topic = identifyTopic(question);
+    const q = question.toLowerCase();
+    
+    let answer = '';
+    let reference = '';
+
+    // Derivative questions
+    if (q.match(/power rule/i)) {
+      answer = `The Power Rule is one of the most fundamental differentiation rules. If f(x) = xⁿ where n is any real number, then f'(x) = n·xⁿ⁻¹.
+
+For example:
+• If f(x) = x³, then f'(x) = 3x²
+• If f(x) = x⁵, then f'(x) = 5x⁴
+• If f(x) = 1/x = x⁻¹, then f'(x) = -x⁻²
+
+The key is to multiply by the exponent and reduce the exponent by 1.`;
+      reference = 'Chapter 3, Section 3.1 (Derivatives of Polynomials and Exponential Functions), pages 174-184';
+    }
+    
+    else if (q.match(/product rule/i)) {
+      answer = `The Product Rule tells us how to differentiate the product of two functions. If h(x) = f(x)·g(x), then:
+
+h'(x) = f'(x)·g(x) + f(x)·g'(x)
+
+In words: "the derivative of the first times the second, plus the first times the derivative of the second."
+
+Example: If h(x) = x²·sin(x), then:
+h'(x) = 2x·sin(x) + x²·cos(x)`;
+      reference = 'Chapter 3, Section 3.2 (The Product and Quotient Rules), pages 185-190';
+    }
+    
+    else if (q.match(/quotient rule/i)) {
+      answer = `The Quotient Rule is used when differentiating one function divided by another. If h(x) = f(x)/g(x), then:
+
+h'(x) = [g(x)·f'(x) - f(x)·g'(x)] / [g(x)]²
+
+Memory tip: "Low d-high minus high d-low, over the square of what's below"
+
+Example: If h(x) = x²/(x+1), then:
+h'(x) = [(x+1)·2x - x²·1] / (x+1)²
+     = [2x² + 2x - x²] / (x+1)²
+     = [x² + 2x] / (x+1)²`;
+      reference = 'Chapter 3, Section 3.2 (The Product and Quotient Rules), pages 185-190';
+    }
+    
+    else if (q.match(/chain rule/i)) {
+      answer = `The Chain Rule is essential for differentiating composite functions. If y = f(g(x)), then:
+
+dy/dx = f'(g(x))·g'(x)
+
+In Leibniz notation: dy/dx = (dy/du)·(du/dx)
+
+Example: If y = (x² + 1)³, let u = x² + 1, then y = u³
+dy/dx = 3u²·2x = 3(x² + 1)²·2x = 6x(x² + 1)²
+
+Think of it as working from the outside in, multiplying by the derivative of each layer.`;
+      reference = 'Chapter 3, Section 3.4 (The Chain Rule), pages 199-208';
+    }
+    
+    // Limit questions
+    else if (q.match(/\b(limit|limits)\b/i) && q.match(/define|definition|what is/i)) {
+      answer = `A limit describes the value that a function approaches as the input approaches some value. We write:
+
+lim[x→a] f(x) = L
+
+This means: "The limit of f(x) as x approaches a equals L"
+
+This tells us that we can make f(x) arbitrarily close to L by taking x sufficiently close to a (but not equal to a).
+
+Key insight: The limit describes the behavior of f(x) NEAR x = a, not necessarily AT x = a. The function doesn't even need to be defined at x = a for the limit to exist.`;
+      reference = 'Chapter 2, Section 2.2 (The Limit of a Function), pages 83-93';
+    }
+    
+    else if (q.match(/limit law|laws of limit/i)) {
+      answer = `The Limit Laws allow us to calculate limits algebraically:
+
+1. Sum Law: lim[f(x) + g(x)] = lim f(x) + lim g(x)
+2. Difference Law: lim[f(x) - g(x)] = lim f(x) - lim g(x)
+3. Constant Multiple Law: lim[c·f(x)] = c·lim f(x)
+4. Product Law: lim[f(x)·g(x)] = lim f(x)·lim g(x)
+5. Quotient Law: lim[f(x)/g(x)] = lim f(x) / lim g(x) (if lim g(x) ≠ 0)
+6. Power Law: lim[f(x)]ⁿ = [lim f(x)]ⁿ
+7. Root Law: lim ⁿ√f(x) = ⁿ√[lim f(x)]
+
+These laws let us break complex limits into simpler pieces.`;
+      reference = 'Chapter 2, Section 2.3 (Calculating Limits Using the Limit Laws), pages 94-104';
+    }
+    
+    // Integration questions
+    else if (q.match(/fundamental theorem.*calculus|FTC/i)) {
+      answer = `The Fundamental Theorem of Calculus connects differentiation and integration - two of calculus's main operations.
+
+**Part 1:** If f is continuous on [a,b], and g(x) = ∫[a to x] f(t)dt, then g'(x) = f(x)
+
+This says: differentiation and integration are inverse processes.
+
+**Part 2:** If f is continuous on [a,b] and F is any antiderivative of f, then:
+∫[a to b] f(x)dx = F(b) - F(a)
+
+This gives us a practical way to evaluate definite integrals: find an antiderivative, then subtract its values at the endpoints.
+
+Example: ∫[0 to 1] x²dx = [x³/3] from 0 to 1 = 1/3 - 0 = 1/3`;
+      reference = 'Chapter 5, Section 5.3 (The Fundamental Theorem of Calculus), pages 399-408';
+    }
+    
+    else if (q.match(/substitution.*rule|u-substitution/i)) {
+      answer = `The Substitution Rule (or u-substitution) is the integration counterpart to the Chain Rule.
+
+If u = g(x), then: ∫ f(g(x))·g'(x)dx = ∫ f(u)du
+
+**Steps:**
+1. Choose u = g(x)
+2. Calculate du = g'(x)dx
+3. Rewrite the integral in terms of u
+4. Integrate
+5. Substitute back to get answer in terms of x
+
+**Example:** ∫ 2x·cos(x²)dx
+Let u = x², then du = 2x dx
+∫ cos(u)du = sin(u) + C = sin(x²) + C
+
+The key is recognizing when you have a function and its derivative multiplied together.`;
+      reference = 'Chapter 5, Section 5.5 (The Substitution Rule), pages 419-427';
+    }
+    
+    // Default responses based on topic
+    else if (topic) {
+      const topicInfo = textbookTopics[topic];
+      answer = `Great question about ${topicInfo.description.toLowerCase()}! This topic is covered extensively in the textbook.
+
+Key concepts include:
+${topicInfo.keyTopics.map(t => `• ${t.charAt(0).toUpperCase() + t.slice(1)}`).join('\n')}
+
+Could you be more specific about which aspect you'd like help with? For example:
+${topicInfo.keyTopics.slice(0, 2).map(t => `• ${t.charAt(0).toUpperCase() + t.slice(1)}`).join('\n')}
+
+This will help me provide you with a more targeted explanation with specific examples from the textbook.`;
+      reference = `Chapter ${topicInfo.chapter} (${topicInfo.description}), pages ${topicInfo.pages}`;
+    }
+    
+    // If no specific topic identified
+    else {
+      answer = `I'd be happy to help you with that! To give you the most accurate and helpful answer, could you provide a bit more detail? 
+
+For example:
+• Are you working on limits, derivatives, or integrals?
+• Do you have a specific problem you're trying to solve?
+• Are you looking for an explanation of a concept or a worked example?
+
+The textbook covers these main topics:
+• Chapter 1: Functions and Models
+• Chapter 2: Limits and Derivatives
+• Chapter 3: Differentiation Rules
+• Chapter 4: Applications of Differentiation
+• Chapter 5: Integrals
+• Chapter 6-7: Integration Applications and Techniques
+
+Let me know which area interests you!`;
+      reference = 'Textbook: "Calculus: Early Transcendentals, 9th Edition" by Stewart, Clegg, and Watson';
+    }
+
+    return { answer, reference };
+  };
+
+  const handleQuestionSubmit = (e) => {
+    e.preventDefault();
+    if (!currentQuestion.trim()) return;
+
+    // Add user's question
+    const userMessage = {
+      type: 'student',
+      content: currentQuestion
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setIsLoading(true);
+    setCurrentQuestion('');
+
+    // Generate answer (simulating processing time)
+    setTimeout(() => {
+      const { answer, reference } = generateAnswer(currentQuestion);
+      
+      const mentorResponse = {
+        type: 'mentor',
+        content: answer,
+        reference: reference
+      };
+
+      setMessages(prev => [...prev, mentorResponse]);
+      setIsLoading(false);
+    }, 500);
+  };
+
+  // Name input screen
+  if (!nameSubmitted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+          <div className="text-center mb-6">
+            <div className="bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <BookOpen className="text-indigo-600" size={32} />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">Calculus Mentor</h1>
+            <p className="text-gray-600">Your personal guide to first-year calculus</p>
+          </div>
+          
+          <form onSubmit={handleNameSubmit}>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                What's your name?
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-3 text-gray-400" size={20} />
+                <input
+                  type="text"
+                  value={studentName}
+                  onChange={(e) => setStudentName(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition"
+                  placeholder="Enter your name"
+                  autoFocus
+                />
+              </div>
+            </div>
+            
+            <button
+              type="submit"
+              className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition shadow-lg hover:shadow-xl"
+            >
+              Start Learning
+            </button>
+          </form>
+          
+          <div className="mt-6 text-xs text-gray-500 text-center">
+            <p>Reference Textbook:</p>
+            <p className="font-medium">Calculus: Early Transcendentals, 9th Edition</p>
+            <p>Stewart, Clegg, Watson</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Chat interface
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
+      {/* Header */}
+      <div className="bg-white shadow-md">
+        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-indigo-100 w-12 h-12 rounded-full flex items-center justify-center">
+              <BookOpen className="text-indigo-600" size={24} />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-800">Calculus Mentor</h1>
+              <p className="text-sm text-gray-600">Helping {studentName}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              setNameSubmitted(false);
+              setMessages([]);
+              setStudentName('');
+            }}
+            className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+          >
+            New Session
+          </button>
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-4xl mx-auto px-4 py-6 space-y-4">
+          {messages.map((message, index) => (
+            <div
+              key={index}
+              className={`flex ${message.type === 'student' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div
+                className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                  message.type === 'student'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-white shadow-md'
+                }`}
+              >
+                <div className={`flex items-start gap-2 ${message.type === 'student' ? '' : 'mb-2'}`}>
+                  {message.type === 'mentor' && (
+                    <MessageCircle className="text-indigo-600 flex-shrink-0 mt-1" size={18} />
+                  )}
+                  <p className="whitespace-pre-line leading-relaxed">
+                    {message.content}
+                  </p>
+                </div>
+                
+                {message.reference && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <div className="flex items-start gap-2">
+                      <BookOpen className="text-indigo-600 flex-shrink-0" size={16} />
+                      <p className="text-sm text-gray-600 italic">
+                        📚 {message.reference}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+          
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="bg-white shadow-md rounded-2xl px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  </div>
+                  <span className="text-sm text-gray-600">Thinking...</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Input */}
+      <div className="bg-white border-t shadow-lg">
+        <div className="max-w-4xl mx-auto px-4 py-4">
+          <form onSubmit={handleQuestionSubmit} className="flex gap-2">
+            <input
+              type="text"
+              value={currentQuestion}
+              onChange={(e) => setCurrentQuestion(e.target.value)}
+              className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition"
+              placeholder="Ask your calculus question..."
+              disabled={isLoading}
+            />
+            <button
+              type="submit"
+              disabled={!currentQuestion.trim() || isLoading}
+              className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <Send size={20} />
+              Ask
+            </button>
+          </form>
+          <p className="text-xs text-gray-500 mt-2 text-center">
+            Try asking about: limits, derivatives, chain rule, integrals, optimization
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
